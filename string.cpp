@@ -71,13 +71,8 @@ class mystr {
 			mystr a;
 			a.len=strlen(s.p)+strlen(this->p);
 			a.p=new char[len+1];
-			a.p[len+1]=0;
-			for(int i=0;i<strlen(this->p);i++) {
-				a.p[i]=this->p[i];
-			}
-			for (int j=strlen(this->p)+1;j<=len;j++) {
-				a.p[j]=s.p[j];
-			}
+			strcpy( a.p, p );
+			strcat( a.p, s.p );
 			return a;
 		}
 
@@ -132,7 +127,7 @@ class mystr {
 		}*/
 
 		ostream& operator << (ostream &out, const mystr &s) {
-			out << s.p;
+			out << "my string is: " << s.p << std::endl;
 			return out;
  		}
 	
