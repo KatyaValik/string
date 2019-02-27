@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 using namespace std;
-
 class mystr {
 	private:
 		char *p;
@@ -19,6 +18,8 @@ class mystr {
 		mystr(const mystr &s) {
 			len=strlen(s.p);
 			p=new char[len+1];
+			objects++;
+			size=size+len;
 			strcpy(p,s.p);
 		}
 		
@@ -27,24 +28,35 @@ class mystr {
 			sprintf(str,"%i",a);
 			len=strlen(str);
 			p=new char[len+1];
+			objects++;
+			size=size+len;
 			strcpy(p,str);
 		}
 
 		mystr(const char* s) {
 			len=strlen(s);
 			p=new char[len+1];
+			objects++;
+			size=size+len;
 			strcpy(p,s);
 		}
 
 		mystr(char c, int n) {
 			p=new char[n+1];
+			len=n;
+			objects++;
+			size=size+len;
 			memset(p,c,n);
 		}
 		
 		~mystr() {
-			if (p!=NULL)
+			if (p!=NULL) {
+				size=size-len;
+				objects--;
 				delete[] p;
-			else cout << "No more mystr objects\n " << endl;
+			}
+			if (objects==0)
+				cout <<"No more mystr objects (size="<<size <<")"<< endl;
 		}
 
 		operator int() const {
@@ -52,13 +64,16 @@ class mystr {
 			return(atoi(c));
 		}
 
-
-		mystr operator = (const mystr& str)
-		{
-			if( (str.p == this->p) && (str.len == this->len) )
-				return *this;
-			else
-				return mystr(str);
+		mystr operator = (const mystr& str) {
+			if(len!=str.len) {
+				size=size-len;
+				delete p;
+				len=str.len;
+				p=new char[len+1];
+				size=size+str.len;
+			}
+			strcpy(p,str.p);
+			return *this;
 		}
 
 		mystr operator = (const char* str)
@@ -71,29 +86,20 @@ class mystr {
 			mystr a;
 			a.len=strlen(s.p)+strlen(this->p);
 			a.p=new char[len+1];
-			a.p[len+1]=0;
-			for(int i=0;i<strlen(this->p);i++) {
-				a.p[i]=this->p[i];
-			}
-			for (int j=strlen(this->p)+1;j<=len;j++) {
-				a.p[j]=s.p[j];
-			}
+			objects++;
+			size=size+len;
+			strcpy( a.p, this->p );
+			strcat( a.p, s.p );
 			return a;
 		}
 
-	/*	mystr operator + (const mystr &s) {
-			char* buf=new char[len+s.len+1];
-			//buf[0]='\0';
-			strcpy(buf,this->p);
-			strcat(buf, s.p);
-			mystr rezult(buf);
-			delete []buf;
-			return rezult;
-		}*/
-		
+
 		mystr operator += (const mystr &s)
 		{
-				
+			mystr b;
+			b=*this+s;
+			*this=b;
+			return *this;
 		}
 			
 		bool operator == (const mystr & s2) 
@@ -105,53 +111,84 @@ class mystr {
 			}
 			return 1;
 		}
-		friend istream& operator >> (istream &in, const mystr &s);
+		char null='\0';
+
+		char& operator[] (unsigned int i) {
+			if (i<len) {
+				return *(p+i);
+			} else {
+				return null;
+			}
+		};
+
+		friend istream& operator >> (istream &in, mystr &s);
 		friend ostream& operator << (ostream &out, const mystr &s);
+		friend bool operator > (const mystr &s1, const mystr &s2);
+		friend bool operator < (const mystr &s1, const mystr &s2);
 };
 
+		int mystr::objects=0;
+		int mystr::size=0;
 
-		/*istream& operator >> (istream &in, const mystr &s) {
-			in >> s.p;
+
+
+		istream& operator >> (istream &in,  mystr &s) {
+			delete [] s.p;
+			char c;
+			char *x=(char*)malloc(1);
+			int length=0;
+			in>>noskipws>>c;
+			while ((c!=' ')&&(c!='\n')) {
+				length++;
+				x=(char*)realloc(x,length+1);
+				*(x+(length-1))=c;
+				in>>noskipws>>c;
+			}
+			*(x+length)='\0';
+			s.len=length;
+			s.p=new char [length+1];
+			s.objects++;
+			s.size=s.size+s.len;
+			strcpy(s.p,x);
+			free(x);
 			return in;
 		}
-		istream& operator >> (istream &in, mystr &s) {
-			int size=0;
-			in.sync();
-			mystr tmp;
-			while (in.peek()!=10) {
-				mystr a((char)in.get());
-				//tmp=tmp+(char)in.get();
-				tmp=tmp+a;
-				size++;
-			}
-			delete []s.p;
-			s.len=tmp.len;
-			s.p= new char[s.len];
-			s=tmp;
-			return in;
-		}*/
 
 		ostream& operator << (ostream &out, const mystr &s) {
-			out << s.p;
+			out << s.p << std::endl;
 			return out;
  		}
 	
-	/*	bool mystr::operator > (const mystr &s1, const mystr &s2) {
-			if (strcmp(s1.p,s2.p)>0) return 1
+		bool operator > (const mystr &s1, const mystr &s2) {
+			if (strcmp(s1.p,s2.p)>0) {
+				return 1;
+			}
 				else return 0;
 		}
-		bool mystr::operator < (const mystr &s1, const mystr &s2) {
-			if (strcmp(s1.p,s2.p)<0) return 1
+		bool operator < (const mystr &s1, const mystr &s2) {
+			if (strcmp(s1.p,s2.p)<0) {
+				return 1;
+			}
 				else return 0;
-		}*/
+		}
 
 
 int main() {
 	mystr a="qwer";
-	//cout << a;
-	mystr b(123);
-	mystr c(a+b);
-	cout << c;
+	mystr b;
+	cin>>b;
+	if (a<b) 
+		cout<<"a<b"<<endl;
+	if (a==b) 
+			cout<<"a==b"<<endl;
+	if (a>b) 
+		cout<<"a>b"<<endl;
+	b[5]='A';
+	cout<<b;
+	mystr c;
+	c=a+b;
+	cout<<c;
+		
 }
 
 
